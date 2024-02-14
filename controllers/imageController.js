@@ -1,24 +1,36 @@
 
+
 const fs = require('fs');
 const path = require('path');
+const cloudinary = require('cloudinary').v2;
 
-exports.uploadImage = (req, res) => {
+
+          
+cloudinary.config({ 
+  cloud_name: 'djs1irzcn', 
+  api_key: '437148446323912', 
+  api_secret: 'nuL-ENxCTtMdtD6_HtrslwJotGY' 
+});
+
+const uploadImage = async (req, res) => {
   try {
-    if (!req.files || Object.keys(req.files).length === 0) {
-      return res.status(400).json({ message: 'No files were uploaded' });
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
     }
-    
-    const uploadedFile = req.files.image;
-    const uploadPath = path.join(__dirname, '..', 'uploads', uploadedFile.name);
 
-    uploadedFile.mv(uploadPath, err => {
-      if (err) {
-        return res.status(500).json({ message: 'Error uploading file' });
-      }
-      res.status(200).json({ message: 'File uploaded successfully' });
+    // Upload file to Cloudinary
+    const response = await cloudinary.uploader.upload(req.file.path, {
+      resource_type: "auto"
     });
+
+    // File uploaded successfully
+    console.log("File uploaded successfully", response.url);
+    fs.unlinkSync(req.file.path); 
+    res.status(200).json({ url: response.url });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server Error' });
+    console.error("Error uploading file:", error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+module.exports = { uploadImage };
